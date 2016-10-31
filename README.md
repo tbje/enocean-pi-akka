@@ -1,5 +1,5 @@
 # Temperature control with Raspberry Pi & Akka 
-This is the source code for my hobby project controlling radiator valves using the Raspberry Pi. I gave a talk about this at [Scala.io](http://scala.io) and you can find the slides [here](https://docs.google.com/presentation/d/1nNsFkdE_LWkUUwBnu7v4Zz_7J2EaoKhJWRfDw1fCSZU/pub?start=false&loop=false&delayms=3000&slide=id.g18ceaa28a3_3_2). 
+This is the source code for my hobby project controlling radiator valves using the Raspberry Pi. I gave a talk about this at [Scala.io](http://scala.io) and you can find the slides [here](https://docs.google.com/presentation/d/1nNsFkdE_LWkUUwBnu7v4Zz_7J2EaoKhJWRfDw1fCSZU/pub?start=false&loop=false&delayms=3000). 
 
 ## Current state
 - Successfully receiving and decoding data.
