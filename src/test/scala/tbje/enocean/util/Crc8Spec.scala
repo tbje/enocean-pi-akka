@@ -1,8 +1,7 @@
 package tbje.enocean.util
 
-import akka.util.{ ByteString => BS, CompactByteString => CBS }
+import akka.util.{ CompactByteString => CBS }
 import org.scalatest.{ Matchers, WordSpec }
-import tbje.enocean.util.DSL._
 
 class Crc8Spec extends WordSpec with Matchers {
   val b = CBS(

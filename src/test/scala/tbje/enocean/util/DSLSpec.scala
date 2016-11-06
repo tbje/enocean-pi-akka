@@ -1,6 +1,5 @@
 package tbje.enocean.util
 
-import akka.util.{ ByteString => BS, CompactByteString => CBS }
 import org.scalatest.{ Matchers, WordSpec }
 import tbje.enocean.util.DSL._
 
