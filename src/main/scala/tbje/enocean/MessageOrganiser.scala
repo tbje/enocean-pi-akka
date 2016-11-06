@@ -1,6 +1,9 @@
 package tbje.enocean
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
+import akka.io.IO
+import akka.util.ByteString
+import ch.jodersky.flow.{ AccessDeniedException, Serial, SerialSettings }
 
 
 object MessageOrganiser {
@@ -8,10 +11,9 @@ object MessageOrganiser {
 }
 
 class MessageOrganiser(port: String, settings: SerialSettings) extends Actor with ActorLogging{
-
+  import context._
   IO(Serial) ! Serial.Open(port, settings)
 
-  override val receive: Receive = init
 
   private[this] val init: Receive = {
     case Serial.CommandFailed(cmd: Serial.Open, reason: AccessDeniedException) =>
@@ -23,6 +25,8 @@ class MessageOrganiser(port: String, settings: SerialSettings) extends Actor wit
       context become running(sender)
     }
   }
+
+  override val receive: Receive = init
 
   private def formatData(data: ByteString): String =
     (for {
