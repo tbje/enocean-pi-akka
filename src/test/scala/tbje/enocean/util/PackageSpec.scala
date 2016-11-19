@@ -13,11 +13,16 @@ class PackageSpec extends WordSpec with Matchers {
     0xb0
   )
   "Running to Int" should {
-    "yield true for headers part" in {
+    "yield 12 for headers" in {
       b match {
-        case _ +: _ +: fst +: snd +: _ =>
-          toInt(fst +: snd +: Nil) shouldEqual 12
+        case _ +: fst +: snd +: opt +: _ =>
+          toInt(fst +: snd +: Nil) shouldEqual 10
+          toInt(opt +: Nil) shouldEqual 7
       }
     }
+    "yield 257 for test case" in {
+      toInt(CBS(0x01, 0x01)) shouldEqual 257
+    }
+
   }
 }

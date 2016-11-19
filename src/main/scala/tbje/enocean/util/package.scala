@@ -11,7 +11,7 @@ package object util {
 
   def toInt(x: BS): Int = x match {
     case fst +: snd +: tail =>
-      fst << 8 + snd
+      (fst << 8) + snd
     case fst +: _ => fst.toInt
   }
 

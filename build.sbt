@@ -8,8 +8,10 @@ offline := true // Use when on the move...
 
 libraryDependencies ++= Dependencies.all
 
-//initialCommands in Console := """|import tbje.util._
-//                                 |import com.github.nscala_time.time.Imports._""".stripMargin
+initialCommands in console := """|import tbje.enocean.util._
+                                 |import tbje.enocean.util.DSL._
+                                 |import akka.util.{ ByteString => BS, CompactByteString => CBS }""".stripMargin
+
 incOptions := incOptions.value.withNameHashing(true)
 
 initialCommands in (Test, console) := """ammonite.Main().run()"""

@@ -14,6 +14,7 @@ object DSL {
 
   implicit class ByteStringOps(val a: BS) extends AnyVal {
     def hex: String = "0x" + a.map(x => f"${x.toByte}%02x").mkString(",")
+    def hex2: String = a.map(x => f"${x.toByte}%02x").mkString(":").toUpperCase()
     def bits = "|" + a.foldLeft("")((x,y) => x + "76543210|") + a.foldLeft("\n|")(_ + displayBits(_) + "|")
   }
 

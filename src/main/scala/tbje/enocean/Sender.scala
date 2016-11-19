@@ -1,8 +1,14 @@
 package tbje.enocean
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{ Actor, ActorLogging, Props }
 import akka.util.{ ByteString => BS, CompactByteString => CBS }
 import tbje.enocean.util._
+
+object Sender {
+  def props() = Props(new Sender())
+
+  case class Message(command: Int, data: BS, opt: BS)
+}
 
 class Sender extends Actor with ActorLogging {
 
@@ -14,6 +20,9 @@ class Sender extends Actor with ActorLogging {
     CBS(0x55) ++ header ++ CBS(headerCrc) ++ body ++ CBS(bodyCrc)
   }
 
-  override def receive: Receive = Actor.emptyBehavior
+  import Sender._
 
+  override def receive: Receive = {
+    case Message(command, data, opt) => createPacket(command, data, opt)
+  }
 }

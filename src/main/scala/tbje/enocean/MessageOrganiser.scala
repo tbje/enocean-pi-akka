@@ -2,18 +2,41 @@ package tbje.enocean
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.io.IO
-import akka.util.ByteString
+import akka.util.{ ByteString => BS, CompactByteString => CBS }
 import ch.jodersky.flow.{ AccessDeniedException, Serial, SerialSettings }
-
+import util._
 
 object MessageOrganiser {
-  def props(port: String, settings: SerialSettings): Props = Props(new Controller(port, settings))
+  def props(port: String, settings: SerialSettings, parser: ActorRef): Props = Props(new MessageOrganiser(port, settings, parser))
+
+  sealed trait Result
+  case class Incomplete(data: BS) extends Result
+  case class Complete(data: BS, dataLen: Int, optLen: Int) extends Result
+  case class TooLong(data: BS, dataLen: Int, optLen: Int, rest: BS) extends Result
+  def checkData(data: BS): Result = data match {
+    case 0x55 +: len1 +: len2 +: opt +: rest =>
+      val dataLen = toInt(CBS(len1, len2))
+      val optLen = toInt(CBS(opt))
+      val totalLen = 7 + dataLen + optLen
+      data.length match {
+        case `totalLen` => Complete(data, dataLen, optLen)
+        case x if x > totalLen => TooLong(data.take(totalLen), dataLen, optLen, data.drop(totalLen))
+        case x if x < totalLen => Incomplete(data)
+      }
+    case 0x55 +: rest => Incomplete(data)
+    case x if x.length > 0 =>
+      checkData(x.dropWhile(_ != 0x55))
+    case _ => Incomplete(data)
+  }
+
 }
 
-class MessageOrganiser(port: String, settings: SerialSettings) extends Actor with ActorLogging{
+class MessageOrganiser(port: String, serialSettings: SerialSettings, parser: ActorRef) extends Actor with ActorLogging with SettingsActor {
   import context._
-  IO(Serial) ! Serial.Open(port, settings)
+  import MessageOrganiser._
 
+  if(!settings.test)
+    IO(Serial) ! Serial.Open(port, serialSettings)
 
   private[this] val init: Receive = {
     case Serial.CommandFailed(cmd: Serial.Open, reason: AccessDeniedException) =>
@@ -28,15 +51,22 @@ class MessageOrganiser(port: String, settings: SerialSettings) extends Actor wit
 
   override val receive: Receive = init
 
-  private def formatData(data: ByteString): String =
-    (for {
-      d <- data
-    } yield f"0x$d%02x") mkString ""
+  import util.DSL._
+  private def formatData(data: BS): String = data.hex
 
-  private[this] def running(operator: ActorRef): Receive = {
-    case Serial.Received(data) =>
-      log.info(s"Received data: ${formatData(data)}")
+  private[this] def running(operator: ActorRef, data: BS = BS.empty): Receive = {
+    case Serial.Received(received) =>
+      MessageOrganiser.checkData(data ++ received) match {
+        case Complete(data, dataLen, optLen) =>
+          parser ! data
+          context become running(operator)
+        case TooLong(data, dataLen, optLen, rest) =>
+          parser ! data
+          context become running(operator, rest)
+        case Incomplete(data) =>
+          context become running(operator, data)
+      }
+      println(s"Received data: ${formatData(data)}")
   }
-
 
 }
