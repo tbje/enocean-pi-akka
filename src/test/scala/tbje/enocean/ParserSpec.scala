@@ -12,7 +12,7 @@ class ParserSpec extends WordSpec with Matchers {
   "Using Parser" should {
     "parse iRTV diagrams" in {
       Parser.parse(b0, 10, 7) shouldEqual
-        IRTV(sender = CBS(0xFF, 0xE1, 0x49, 0x80), valvePos = 50, eneryHarvesting = false, sufficienEnergy = true, intTemp = -17, dbm = -49, dest = CBS(0xFF,0xFF,0xFF,0xFF))
+        IRTV(sender = CBS(0xFF, 0xE1, 0x49, 0x80), valvePos = 50, eneryHarvesting = false, sufficienEnergy = true, intTemp = 23, dbm = -49, dest = CBS(0xFF,0xFF,0xFF,0xFF))
     }
     "parse iRTV learn diagrams" in {
       val l = Parser.parse(learn, 10, 7)

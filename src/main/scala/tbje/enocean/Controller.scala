@@ -8,6 +8,7 @@ object Controller {
   case object InfoRequest
   case object InfoRequestTimout
   case class SetRequest(id: Int, state: Int)
+  case class SerialOpened(operator: ActorRef)
 
   def props(port: String, settings: SerialSettings): Props = Props(new Controller(port, settings))
 
@@ -25,40 +26,78 @@ object Controller {
 
 }
 
-class Controller(port: String, settings: SerialSettings) extends Actor with ActorLogging {
-
-  private[this] def createRoom(name: String, id: Int) = context.actorOf(Room.props(name, id), s"room-${name.toLowerCase()}")
-
+class Controller(port: String, serialSettings: SerialSettings) extends Actor with ActorLogging with SettingsActor {
   import Controller._
-  private var rooms: Map[Int, ActorRef] =
-    mappedDevices map { case (address, (name, id)) =>
-      id -> createRoom(name, id)
+
+  private[this] def createRoom(sender: ActorRef, name: String, id: Int) =
+    context.actorOf(Room.props(sender, name, id), s"room-${name.toLowerCase()}")
+
+  context.actorOf(Props(new Actor with ActorLogging {
+    import ch.jodersky.flow.{ AccessDeniedException, Serial, SerialSettings }
+    import akka.io.IO
+    import context.system
+    if(!settings.test) {
+      IO(Serial) ! Serial.Open(port, serialSettings)
+    } else {
+      context.parent ! SerialOpened(context.system.deadLetters)
+      context stop self
     }
+
+    override val receive: Receive = {
+      case Serial.CommandFailed(cmd: Serial.Open, reason: AccessDeniedException) =>
+        log.error("You're not allowed to open that port!")
+        context stop self
+      case Serial.CommandFailed(cmd: Serial.Open, reason) =>
+        log.error("Could not open port for some other reason: " + reason.getMessage)
+        context stop self
+      case Serial.Opened(settings) => {
+        log.info("Port opened")
+        context.parent ! SerialOpened(sender)
+        context stop self
+      }
+    }
+  }), "init-serial")
 
   log.info("Starting controller")
 
-  def createMessageOrganiser(parser: ActorRef) =
-    context.actorOf(MessageOrganiser.props(port, settings, parser), "organiser")
+  def createMessageOrganiser(operator: ActorRef, parser: ActorRef) =
+    context.actorOf(MessageOrganiser.props(operator, parser), "organiser")
 
-  def createParser() =
+  def createParser(rooms: Map[Int, ActorRef]) =
     context.actorOf(Parser.props(mappedDevices, rooms), "parser")
-
-  val parser = createParser()
-  val organiser = createMessageOrganiser(parser)
 
   var roomReqSeq = 0
 
   import context.dispatcher
   import concurrent.duration._
 
+  private def createSender(operator: ActorRef) =
+    context.actorOf(Sender.props(operator), "serial-sender")
+
+  private[this] val init : Receive = {
+    case SerialOpened(operator) =>
+      val serialSender = createSender(operator)
+      import Controller._
+      val rooms: Map[Int, ActorRef] =
+        mappedDevices map { case (address, (name, id)) =>
+          id -> createRoom(serialSender, name, id)
+        }
+      val parser = createParser(rooms)
+      val organiser = createMessageOrganiser(operator, parser)
+      context become running(operator, parser, organiser, rooms)
+  }
+
   implicit val to = Timeout(1 second)
-  override val receive: Receive = {
+  override val receive: Receive = init
+
+  private[this] def running(operator: ActorRef, parser: ActorRef, organiser: ActorRef, rooms: Map[Int, ActorRef]): Receive = {
     case InfoRequest =>
       val sen = sender()
       createCollectorActor(sender(), rooms.map(_._2)(collection.breakOut), roomReqSeq)
 
     case SetRequest(id, state) if rooms.contains(id) =>
       rooms(id) forward Room.SetRequest(state)
+
   }
 
   def createCollectorActor(terminal: ActorRef, rooms: Seq[ActorRef], id: Int) =

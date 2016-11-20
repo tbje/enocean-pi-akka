@@ -1,13 +1,12 @@
 package tbje.enocean
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
-import akka.io.IO
 import akka.util.{ ByteString => BS, CompactByteString => CBS }
-import ch.jodersky.flow.{ AccessDeniedException, Serial, SerialSettings }
+import ch.jodersky.flow.Serial
 import util._
 
 object MessageOrganiser {
-  def props(port: String, settings: SerialSettings, parser: ActorRef): Props = Props(new MessageOrganiser(port, settings, parser))
+  def props(operator: ActorRef, parser: ActorRef): Props = Props(new MessageOrganiser(operator, parser))
 
   sealed trait Result
   case class Incomplete(data: BS) extends Result
@@ -31,40 +30,26 @@ object MessageOrganiser {
 
 }
 
-class MessageOrganiser(port: String, serialSettings: SerialSettings, parser: ActorRef) extends Actor with ActorLogging with SettingsActor {
+class MessageOrganiser(operator: ActorRef, parser: ActorRef) extends Actor with ActorLogging with SettingsActor {
   import context._
   import MessageOrganiser._
-
-  if(!settings.test)
-    IO(Serial) ! Serial.Open(port, serialSettings)
-
-  private[this] val init: Receive = {
-    case Serial.CommandFailed(cmd: Serial.Open, reason: AccessDeniedException) =>
-      println("You're not allowed to open that port!")
-    case Serial.CommandFailed(cmd: Serial.Open, reason) =>
-      println("Could not open port for some other reason: " + reason.getMessage)
-    case Serial.Opened(settings) => {
-      println("Port opened")
-      context become running(sender)
-    }
-  }
-
-  override val receive: Receive = init
 
   import util.DSL._
   private def formatData(data: BS): String = data.hex
 
-  private[this] def running(operator: ActorRef, data: BS = BS.empty): Receive = {
+  override def receive: Receive = running()
+
+  private[this] def running(data: BS = BS.empty): Receive = {
     case Serial.Received(received) =>
       MessageOrganiser.checkData(data ++ received) match {
         case Complete(data, dataLen, optLen) =>
-          parser ! data
-          context become running(operator)
+          parser ! Parser.Parse(data, dataLen, optLen)
+          context become running()
         case TooLong(data, dataLen, optLen, rest) =>
-          parser ! data
-          context become running(operator, rest)
+          parser ! Parser.Parse(data, dataLen, optLen)
+          context become running(rest)
         case Incomplete(data) =>
-          context become running(operator, data)
+          context become running(data)
       }
       println(s"Received data: ${formatData(data)}")
   }

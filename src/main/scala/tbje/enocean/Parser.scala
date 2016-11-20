@@ -73,7 +73,7 @@ object Parser {
         dest = optData.slice(1, 5),
         sender = data.slice(data.length-5, data.length-1),
         dbm = -optData(5),
-        intTemp = 40 * dbs.getDb(1) / 255, // DB0.bit_7
+        intTemp = 40 * (dbs.getDb(1) & 0xff) / 255, // DB0.bit_7
         valvePos = dbs.getDb(3).toInt,
         eneryHarvesting = dbs.getBit(2, 6) == 1,
         sufficienEnergy = dbs.getBit(2, 5) == 1
@@ -112,7 +112,9 @@ class Parser(mappedDevices: Map[BS, (String, Int)], mappedActors: Map[Int, Actor
 
   def receive: Receive = {
     case Parse(payload, dataLen, optLen) =>
-      parse(payload, dataLen, optLen) match {
+      val parseResult = parse(payload, dataLen, optLen)
+      log.debug(parseResult.toString)
+      parseResult match {
         case msg @ IRTV(sender, _, valvePos, eneryHarvesting, sufficienEnergy, dbm, intTemp) =>
           addressToActor.get(sender).foreach(_ ! msg)
         case msg @ Learn(sender, _, rorg, func, eeptype, manufacturer, learnType, learnStatus) =>
