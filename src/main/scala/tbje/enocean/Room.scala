@@ -12,6 +12,8 @@ class Room(serialSender: ActorRef, name: String, roomId: Int) extends Actor with
   var state = 50
 
   override val receive: Receive = {
+    case Room.HistRequest(id) =>
+      sender ! Room.Hist(name, roomId, hist)
     case Room.InfoRequest(id) =>
       sender ! Room.Info(id, name, state, roomId, hist.headOption.map(_._1))
     case Room.SetRequest(newState) =>
@@ -31,6 +33,10 @@ object Room {
   case class InfoRequest(id: Int)
 
   case class Info(id: Int, name: String, state: Int, roomId: Int, lastSeen: Option[DateTime])
+
+  case class HistRequest(id: Int)
+
+  case class Hist(name: String, id: Int, hist: List[(DateTime, Parser.ParseResult)])
 
   case class SetRequest(state: Int)
 

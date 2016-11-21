@@ -47,6 +47,16 @@ class TempControl(system: ActorSystem, controller: ActorRef) extends CommandLine
           case _ => console("Failed ...")
         }
         commandLoop()
+      case Command.History(room) =>
+        (controller ? Room.HistRequest(room)).mapTo[Room.Hist] onComplete {
+          case Success(Room.Hist(name, roomId, elements)) =>
+            console(s"Room ${red"$roomId"} ${green"$name"}:")
+            elements.foreach { case (time, msg) =>
+              console(s"  ${red"${time.toString("hh:mm:ss")}"} ${green"$msg"}")
+            }
+          case _ => console("Failed ...")
+        }
+        commandLoop()
       case Command.Set(room, pct) =>
         console(s"Setting room ${magenta"$room"} to ${yellow"$pct%"}.")
           (controller ? Controller.SetRequest(room, pct)).mapTo[Room.SetReply] onComplete {
@@ -62,8 +72,10 @@ class TempControl(system: ActorSystem, controller: ActorRef) extends CommandLine
       case Command.Help =>
         console("Help:\n" +
           f"${yellow"s"}${magenta"|"}${yellow"set"} [${magenta"room"}] [${green"opening"}] - instruct ${magenta"room"} to open valve at ${green"opening"}. i.e. ${yellow"set"} ${magenta"2"} ${green"75"}%n" +
+          f"${yellow"l"}${magenta"|"}${yellow"list"} to ${green"list rooms"}%n" +
+          f"${yellow"hi"}${magenta"|"}${yellow"hist"} [${magenta"room"}] - history for room ${magenta"room"}%n" +
           f"${yellow"q"}${magenta"|"}${yellow"quit"} to ${green"quit"}%n" +
-          f"${yellow"h"}${magenta"|"}${yellow"help"} to display this screen.")
+          f"${yellow"he"}${magenta"|"}${yellow"help"} to display this screen.")
         commandLoop()
       case Command.Unknown(command) =>
         console(s"Unknown command ${command}!")
@@ -72,7 +84,7 @@ class TempControl(system: ActorSystem, controller: ActorRef) extends CommandLine
 
   def run(): Unit = {
     console(f"${magenta"${system.name}"} running and ready for your input: "
-      + s"`${yellow"q"}` or `${yellow"h"}`")
+      + s"`${yellow"q"}` or `${yellow"he"}`")
     commandLoop()
     system.terminate()
     Await.ready(system.whenTerminated, Duration.Inf)

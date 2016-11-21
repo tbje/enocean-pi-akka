@@ -67,8 +67,10 @@ class Controller(port: String, serialSettings: SerialSettings) extends Actor wit
   override val receive: Receive = init
 
   private[this] def running(operator: ActorRef, parser: ActorRef, organiser: ActorRef, rooms: Map[Int, ActorRef]): Receive = {
+    case msg @ Room.HistRequest(id) =>
+      rooms.get(id).foreach(_ forward msg)
+
     case InfoRequest =>
-      val sen = sender()
       createCollectorActor(sender(), rooms.map(_._2)(collection.breakOut), roomReqSeq)
 
     case SetRequest(id, state) if rooms.contains(id) =>

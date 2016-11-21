@@ -14,6 +14,8 @@ trait CommandLineInterface {
 
     case object List extends Command
 
+    case class History(room: Int) extends Command
+
     case class Set(room: Int, percent: Int) extends Command
 
     case class Unknown(command: String) extends Command
@@ -33,6 +35,9 @@ trait CommandLineInterface {
     def quit: Parser[Command.Quit.type] =
       "quit|q".r ^^ (_ => Command.Quit)
 
+    def history: Parser[Command.History] =
+      "hist|hi".r ~> int ^^ { case room => Command.History(room) }
+
     def list: Parser[Command.List.type] =
       "list|l".r ^^ (_ => Command.List)
 
@@ -42,12 +47,13 @@ trait CommandLineInterface {
       }
 
     def help: Parser[Command.Help.type] =
-      """help|h|\?""".r ^^ (_ => Command.Help)
+      """help|he""".r ^^ (_ => Command.Help)
+      //"""help|he|\?""".r ^^ (_ => Command.Help)
 
     def int: Parser[Int] =
       """\d+""".r ^^ (_.toInt)
   }
 
   private val parser: CmdParser.Parser[Command] =
-    CmdParser.quit | CmdParser.help | CmdParser.list | CmdParser.set
+    CmdParser.quit | CmdParser.help | CmdParser.list | CmdParser.set | CmdParser.history
 }

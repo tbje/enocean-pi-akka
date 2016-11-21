@@ -47,7 +47,7 @@ class MessageOrganiser(port: String, serialSettings: SerialSettings, parser: Act
       println("Could not open port for some other reason: " + reason.getMessage)
     case Serial.Opened(settings) => {
       println("Port opened")
-      context.parent ! Controller.SerialOpened(context.system.deadLetters)
+      context.parent ! Controller.SerialOpened(sender)
       context become running(sender)
     }
   }
