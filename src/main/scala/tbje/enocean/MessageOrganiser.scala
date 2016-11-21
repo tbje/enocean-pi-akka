@@ -1,12 +1,13 @@
 package tbje.enocean
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
+import akka.io.IO
 import akka.util.{ ByteString => BS, CompactByteString => CBS }
-import ch.jodersky.flow.Serial
+import ch.jodersky.flow.{ AccessDeniedException, Serial, SerialSettings }
 import util._
 
 object MessageOrganiser {
-  def props(operator: ActorRef, parser: ActorRef): Props = Props(new MessageOrganiser(operator, parser))
+  def props(port: String, settings: SerialSettings, parser: ActorRef): Props = Props(new MessageOrganiser(port, settings, parser))
 
   sealed trait Result
   case class Incomplete(data: BS) extends Result
@@ -30,26 +31,43 @@ object MessageOrganiser {
 
 }
 
-class MessageOrganiser(operator: ActorRef, parser: ActorRef) extends Actor with ActorLogging with SettingsActor {
+class MessageOrganiser(port: String, serialSettings: SerialSettings, parser: ActorRef) extends Actor with ActorLogging with SettingsActor {
   import context._
   import MessageOrganiser._
+
+  if(!settings.test)
+    IO(Serial) ! Serial.Open(port, serialSettings)
+  else
+    context.parent ! Controller.SerialOpened(context.system.deadLetters)
+
+  private[this] val init: Receive = {
+    case Serial.CommandFailed(cmd: Serial.Open, reason: AccessDeniedException) =>
+      println("You're not allowed to open that port!")
+    case Serial.CommandFailed(cmd: Serial.Open, reason) =>
+      println("Could not open port for some other reason: " + reason.getMessage)
+    case Serial.Opened(settings) => {
+      println("Port opened")
+      context.parent ! Controller.SerialOpened(context.system.deadLetters)
+      context become running(sender)
+    }
+  }
+
+  override val receive: Receive = init
 
   import util.DSL._
   private def formatData(data: BS): String = data.hex
 
-  override def receive: Receive = running()
-
-  private[this] def running(data: BS = BS.empty): Receive = {
+  private[this] def running(operator: ActorRef, data: BS = BS.empty): Receive = {
     case Serial.Received(received) =>
       MessageOrganiser.checkData(data ++ received) match {
         case Complete(data, dataLen, optLen) =>
           parser ! Parser.Parse(data, dataLen, optLen)
-          context become running()
+          context become running(operator)
         case TooLong(data, dataLen, optLen, rest) =>
           parser ! Parser.Parse(data, dataLen, optLen)
-          context become running(rest)
+          context become running(operator, rest)
         case Incomplete(data) =>
-          context become running(data)
+          context become running(operator, data)
       }
       println(s"Received data: ${formatData(data)}")
   }

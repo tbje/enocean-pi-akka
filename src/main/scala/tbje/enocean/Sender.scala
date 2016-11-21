@@ -5,13 +5,13 @@ import akka.util.{ ByteString => BS, CompactByteString => CBS }
 import tbje.enocean.util._
 
 object Sender {
-  def props(operator: ActorRef) = Props(new Sender(operator))
+  def props() = Props(new Sender())
 
   case class Message(command: Int, data: BS, opt: BS)
 
 }
 
-class Sender(operator: ActorRef) extends Actor with ActorLogging {
+class Sender() extends Actor with ActorLogging {
 
   def createPacket(command: Int, data: BS, opt: BS): BS = {
     val header = fromInt(data.length) ++ CBS(opt.length, command)
@@ -23,8 +23,13 @@ class Sender(operator: ActorRef) extends Actor with ActorLogging {
 
   import Sender._
 
-  override def receive: Receive = {
+  private[this] def operational(operator: ActorRef): Receive = {
     case Message(command, data, opt) =>
       operator ! createPacket(command, data, opt)
+  }
+
+  override def receive: Receive = {
+    case Controller.SerialOpened(operator) =>
+      context become operational(operator)
   }
 }
