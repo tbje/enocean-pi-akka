@@ -40,9 +40,9 @@ class TempControl(system: ActorSystem, controller: ActorRef) extends CommandLine
         (controller ? Controller.InfoRequest).mapTo[Seq[Room.Info]] onComplete {
           case Success(x) =>
             if (x.isEmpty) console(s"No rooms replied")
-              x foreach { case Room.Info(name, state, id, lastSeen) =>
+              x foreach { case Room.Info(_, name, state, roomId, lastSeen) =>
                 val lastSeenStr = lastSeen.map(x => cyan"${x.toString("hh:mm:ss")}").getOrElse("never seen")
-                console(s"Room ${red"$id"} ${green"$name"}at ${yellow"$state%"} - $lastSeenStr.")
+                console(s"Room ${red"$roomId"} ${green"$name"} at ${yellow"$state%"} - $lastSeenStr.")
               }
           case _ => console("Failed ...")
         }

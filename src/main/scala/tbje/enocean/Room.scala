@@ -4,26 +4,25 @@ import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.util.{ ByteString => BS, CompactByteString => CBS }
 import com.github.nscala_time.time.Imports._
 
-class Room(serialSender: ActorRef, name: String, id: Int) extends Actor with ActorLogging {
+class Room(serialSender: ActorRef, name: String, roomId: Int) extends Actor with ActorLogging {
   import Room._
 
   var hist: List[(DateTime, Parser.ParseResult)] = List()
-
 
   var state = 50
 
   override val receive: Receive = {
     case Room.InfoRequest(id) =>
-      sender ! Room.Info(name, state, id, hist.headOption.map(_._1))
+      sender ! Room.Info(id, name, state, roomId, hist.headOption.map(_._1))
     case Room.SetRequest(newState) =>
       state = newState
       sender ! Room.SetReply.OK(name, state)
     case msg @ Parser.Learn(sender, _, rorg, func, eeptype, manufacturer, learnType, learnStatus) =>
       hist = ((DateTime.now -> msg) :: hist).take(20)
-      serialSender ! createLearnMessage(id)
+      serialSender ! createLearnMessage(roomId)
     case msg @ Parser.IRTV(sender: BS, dest: BS, valvePos: Int, eneryHarvesting: Boolean, sufficienEnergy: Boolean, dbm: Int, intTemp: Int) =>
       hist = ((DateTime.now -> msg) :: hist).take(20)
-      serialSender ! createMessage(state, id)
+      serialSender ! createMessage(state, roomId)
     case other => log.debug(other.toString())
   }
 }
@@ -31,7 +30,7 @@ class Room(serialSender: ActorRef, name: String, id: Int) extends Actor with Act
 object Room {
   case class InfoRequest(id: Int)
 
-  case class Info(name: String, state: Int, id: Int, lastSeen: Option[DateTime])
+  case class Info(id: Int, name: String, state: Int, roomId: Int, lastSeen: Option[DateTime])
 
   case class SetRequest(state: Int)
 
