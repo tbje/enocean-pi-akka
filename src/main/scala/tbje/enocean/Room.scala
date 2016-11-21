@@ -14,7 +14,7 @@ class Room(serialSender: ActorRef, name: String, id: Int) extends Actor with Act
 
   override val receive: Receive = {
     case Room.InfoRequest(id) =>
-      sender ! Room.Info(name, state, id)
+      sender ! Room.Info(name, state, id, hist.headOption.map(_._1))
     case Room.SetRequest(newState) =>
       state = newState
       sender ! Room.SetReply.OK(name, state)
@@ -31,7 +31,7 @@ class Room(serialSender: ActorRef, name: String, id: Int) extends Actor with Act
 object Room {
   case class InfoRequest(id: Int)
 
-  case class Info(name: String, state: Int, id: Int)
+  case class Info(name: String, state: Int, id: Int, lastSeen: Option[DateTime])
 
   case class SetRequest(state: Int)
 

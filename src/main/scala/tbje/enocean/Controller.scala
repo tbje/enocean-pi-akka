@@ -82,7 +82,7 @@ class Controller(port: String, serialSettings: SerialSettings) extends Actor wit
       for(r <- rooms) r ! Room.InfoRequest(id)
       val timeout = context.system.scheduler.scheduleOnce(1 second, self, Controller.InfoRequestTimout)
       override val receive: Receive = {
-        case msg @ Room.Info(name, state, `id`) =>
+        case msg @ Room.Info(name, state, `id`, _) =>
           collected = msg +: collected
           if (collected.length == len) {
             timeout.cancel

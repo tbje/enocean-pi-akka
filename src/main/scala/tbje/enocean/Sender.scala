@@ -3,6 +3,7 @@ package tbje.enocean
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.util.{ ByteString => BS, CompactByteString => CBS }
 import tbje.enocean.util._
+import ch.jodersky.flow.Serial
 
 object Sender {
   def props() = Props(new Sender())
@@ -25,7 +26,7 @@ class Sender() extends Actor with ActorLogging {
 
   private[this] def operational(operator: ActorRef): Receive = {
     case Message(command, data, opt) =>
-      operator ! createPacket(command, data, opt)
+      operator ! Serial.Write(createPacket(command, data, opt))
   }
 
   override def receive: Receive = {

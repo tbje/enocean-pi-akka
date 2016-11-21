@@ -119,6 +119,8 @@ class Parser(mappedDevices: Map[BS, (String, Int)], mappedActors: Map[Int, Actor
           addressToActor.get(sender).foreach(_ ! msg)
         case msg @ Learn(sender, _, rorg, func, eeptype, manufacturer, learnType, learnStatus) =>
           addressToActor.get(sender).foreach(_ ! msg)
+        case other =>
+          log.info(other.toString)
       }
   }
 }
