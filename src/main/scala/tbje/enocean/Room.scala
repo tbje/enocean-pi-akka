@@ -47,6 +47,9 @@ object Room {
 
   private[this] val broadcast  = CBS(0xff, 0xff, 0xff, 0xff)
 
+  private[this] def sender(id: Int) =
+    baseId.take(3) ++ CBS(baseId(3)+ id)
+
   private def createMessage(valvePos: Int, id: Int): Sender.Message = {
     val db0NoLearn  = bit"00001000"
     val db1Summer   = bit"00001000"
@@ -56,11 +59,10 @@ object Room {
     val db2 = temp * 255 / 20
     val db3 = valvePos
     val dbs = CBS(db3, db2, db1, db0NoLearn)
-    val sender = baseId.take(3) ++ CBS(baseId(3)+ id)
     val dbm = 0xff
     val sec = 0x00
     val status = 0x00
-    val data = CBS(0xa5) ++ dbs ++ sender ++ CBS(status)
+    val data = CBS(0xa5) ++ dbs ++ sender(id) ++ CBS(status)
     val opt = CBS(0x01) ++ broadcast ++ CBS(dbm, sec)
     Sender.Message(0x01, data, opt)
   }
@@ -68,12 +70,11 @@ object Room {
   private def createLearnMessage(id: Int): Sender.Message = {
     val db0Learn    = bit"11110000"
     // taken from data sent from micropelt
-    val dbs = CBS(0x54, 0xa0, 0x0f, db0Learn)
-    val sender = baseId.take(3) ++ CBS(baseId(3)+ id)
+    val dbs = CBS(0x80, 0x0f, 0xff, db0Learn)
     val dbm = 0xff
     val sec = 0x00
     val status = 0x00
-    val data = CBS(0xa5) ++ dbs ++ sender ++ CBS(status)
+    val data = CBS(0xa5) ++ dbs ++ sender(id) ++ CBS(status)
     val opt = CBS(0x01) ++ broadcast ++ CBS(dbm, sec)
     Sender.Message(0x01, data, opt)
   }
