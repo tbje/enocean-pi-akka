@@ -42,11 +42,11 @@ class MessageOrganiser(port: String, serialSettings: SerialSettings, parser: Act
 
   private[this] val init: Receive = {
     case Serial.CommandFailed(cmd: Serial.Open, reason: AccessDeniedException) =>
-      println("You're not allowed to open that port!")
+      log.error("You're not allowed to open that port!")
     case Serial.CommandFailed(cmd: Serial.Open, reason) =>
-      println("Could not open port for some other reason: " + reason.getMessage)
+      log.error("Could not open port for some other reason: " + reason.getMessage)
     case Serial.Opened(settings) => {
-      println("Port opened")
+      log.debug(s"Port $port opened")
       context.parent ! Controller.SerialOpened(sender)
       context become running(sender)
     }
@@ -69,7 +69,7 @@ class MessageOrganiser(port: String, serialSettings: SerialSettings, parser: Act
         case Incomplete(data) =>
           context become running(operator, data)
       }
-      println(s"Received data: ${formatData(data)}")
+      log.debug(s"Handling data: ${formatData(data ++ received)}")
   }
 
 }
