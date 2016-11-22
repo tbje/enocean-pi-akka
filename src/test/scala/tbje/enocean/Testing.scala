@@ -12,7 +12,7 @@ object Testing {
   def getBit(db: Int, bit: Int, data: Seq[Byte]) =
     getDb(db, data) >> bit & 1
 
-  val bO = CBS(
+  val b0 = CBS(
     0x55,
     0x00, 0x0a, 0x07, 0x01, 0xeb,
     0xa5, 0x32, 0x20, 0x93, 0x08, 0xff, 0xe1, 0x49, 0x80, 0x00,
@@ -64,13 +64,14 @@ object Testing {
   require(Crc8(init.drop(1).init) == headerCrc, "Header CRC failed")
   require(Crc8(allData.init) == dataCrc, "Data CRC failed")
   val rorg = data(0).hex
-  val dest = opt.drop(1).take(4).hex
-  val sender = data.reverse.drop(1).take(4).reverse.hex
+  val dest = opt.drop(1).take(4).hex2
+  val sender = data.reverse.drop(1).take(4).reverse.hex2
   val dbm = -opt(5)
 
   val dbs = data.take(5)
   val learn = getBit(0,3, dbs) // DB0.bit_
   val learn2 = getDb(1, dbs).hex // DB0.bit_
+  //val learn2 = getDb(1, dbs) // DB0.bit_
 
 
   val intTemp = 40 * getDb(1,dbs) / 255 // DB0.bit_7
