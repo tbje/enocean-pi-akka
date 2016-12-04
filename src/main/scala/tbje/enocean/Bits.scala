@@ -1,5 +1,9 @@
 package tbje.enocean
 
+/* Copied from Guillaume Belroses BitWrangler - kafecho/BitWrangler
+ * https://github.com/kafecho/BitWrangler/blob/master/bitwrangler-core/src/main/scala/org/kafecho/bitwrangler/NonMacroBitWrangler.scala
+ */
+
 import akka.util.ByteString
 
 object Bits {

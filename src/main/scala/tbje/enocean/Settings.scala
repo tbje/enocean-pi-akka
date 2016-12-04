@@ -11,6 +11,9 @@ class Settings(system: ActorSystem) {
   val test: Boolean =
     system.settings.config.getBoolean("temp-control.test")
 
+  val ip: String =
+    system.settings.config.getString("temp-control.ip")
+
 }
 
 trait SettingsActor { _: Actor =>

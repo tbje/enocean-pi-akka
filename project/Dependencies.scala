@@ -3,8 +3,8 @@ import sbt._
 object Version {
   val flow             = "3.0.3"
   val akka             = "2.4.11"
-  val logback          = "1.0.13"
-  val slf4jLog4j12     = "1.7.5"
+  val akkaHttp         = "10.0.0"
+  val logback          = "1.1.3"
   val nScalaTime       = "2.0.0"
   val scala            = "2.11.8"
   val scalaTest        = "2.2.2"
@@ -18,11 +18,11 @@ object Library {
   val ammonite         = "com.lihaoyi"                   %  "ammonite"                  % Version.ammonite % "test" cross CrossVersion.full
   val akkaActor        = "com.typesafe.akka"             %% "akka-actor"                % Version.akka
   val akkaSlf4j        = "com.typesafe.akka"             %% "akka-slf4j"                % Version.akka
+  val akkaHttp         = "com.typesafe.akka"             %% "akka-http"                 % Version.akkaHttp
   val akkaTestkit      = "com.typesafe.akka"             %% "akka-testkit"              % Version.akka
   val logbackClassic   = "ch.qos.logback"                %  "logback-classic"           % Version.logback
   val nScalaTime       = "com.github.nscala-time"        %% "nscala-time"               % Version.nScalaTime
   val scalaTest        = "org.scalatest"                 %% "scalatest"                 % Version.scalaTest
-  val slf4jLog4j12     = "org.slf4j"                     %  "slf4j-log4j12"             % Version.slf4jLog4j12
 }
 
 object Dependencies {
@@ -39,7 +39,9 @@ object Dependencies {
     akkaActor ::
     ammonite ::
     nScalaTime ::
-    slf4jLog4j12 ::
+    akkaSlf4j ::
+    akkaHttp ::
+    logbackClassic ::
     Nil
   )
 

@@ -4,6 +4,8 @@ organization := "tbje"
 
 scalaVersion := Version.scala
 
+//ensimeScalaVersion in ThisBuild := Version.scala
+
 offline := true // Use when on the move...
 
 libraryDependencies ++= Dependencies.all
