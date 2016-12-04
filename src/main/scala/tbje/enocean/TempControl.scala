@@ -6,7 +6,7 @@ import akka.event.Logging
 import akka.util.Timeout
 import ch.jodersky.flow.{ Parity, SerialSettings }
 import annotation.tailrec
-import org.slf4j.{LoggerFactory}
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.StdIn
@@ -23,17 +23,6 @@ object TempControl {
 
 class TempControl(system: ActorSystem, controller: ActorRef) extends CommandLineInterface {
 
-  val context = LoggerFactory.getILoggerFactory() match {
-    case context: ch.qos.logback.classic.LoggerContext =>
-      context.getLoggerList().foreach(l =>
-        l.getLogger().foreach { logger =>
-          logger.iteratorForAppenders() foreach { appender =>
-            println(appender)
-          }
-        }
-      )
-  }
-
   private val log = Logging(system, getClass.getName)
 
   private def console(x: Any) = println(x)
@@ -46,6 +35,10 @@ class TempControl(system: ActorSystem, controller: ActorRef) extends CommandLine
   import system.dispatcher
 
   val web = new WebServer(controller)
+
+  private[this] val loggers = util.Logs.listLogs
+  if (loggers.isEmpty) println("No loggers found") else loggers.foreach(println)
+
 
   @tailrec
   private def commandLoop(): Unit =
