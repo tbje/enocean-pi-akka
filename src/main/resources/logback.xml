@@ -2,7 +2,7 @@
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>warn</level>
+            <level>error</level>
         </filter>
         <encoder>
             <pattern>%date{HH:mm:ss} %-5level [%X{akkaSource}] - %msg%n</pattern>
@@ -16,7 +16,7 @@
         </encoder>
     </appender>
 
-    <logger name="tbje.enocean" level="debug" additivity="false">
+    <logger name="tbje.enocean" level="info" additivity="false">
         <appender-ref ref="file"/>
     </logger>
 
@@ -24,7 +24,7 @@
         <appender-ref ref="file"/>
     </logger>
 
-    <root level="warn">
+    <root level="info">
         <appender-ref ref="file"/>
     </root>
 
